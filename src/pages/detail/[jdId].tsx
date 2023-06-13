@@ -3,16 +3,16 @@ import { useRouter } from 'next/router';
 import { Layout, JobSummary, Flex } from '../../components';
 import { getDetailJob, getJobList } from '../../services';
 import { useJobDetail } from '../../hooks';
-import { JobDetail } from '../../types';
+import { JobDetailResponse } from '../../types';
+import { isJobDetailResponse } from '../../utils';
 
 interface DetailProps {
-  jobDetail: JobDetail;
+  jobDetailResponse: JobDetailResponse;
 }
 
-const Detail = ({ jobDetail }: DetailProps) => {
+const Detail = ({ jobDetailResponse }: DetailProps) => {
   const router = useRouter();
-  const { jdId } = router.query;
-  const { data } = useJobDetail(Number(jdId));
+  const { data } = useJobDetail(jobDetailResponse);
 
   if (router.isFallback) {
     return <div>...Loading</div>;
@@ -21,42 +21,46 @@ const Detail = ({ jobDetail }: DetailProps) => {
   return (
     <Layout
       content={
-        <>
-          <JobSummary
-            imgSrc={
-              jobDetail.company.logo_url
-                ? jobDetail.company.logo_url
-                : '/no-photo.png'
-            }
-            companyName={jobDetail.company.name}
-            startTime={jobDetail.start_time}
-            endTime={jobDetail.end_time}
-            title={jobDetail.title}
-            bookmark={jobDetail.bookmark}
-            view={jobDetail.view}
-            buttonProp={{
-              children: '지원하기',
-              onClick: () => router.push(jobDetail.apply_url),
-            }}
-          />
-          <Flex.Row>
-            <Flex.Item>{jobDetail.task.main_task}</Flex.Item>
-            <Flex.Item>{jobDetail.task.sub_task_arr.join(', ')}</Flex.Item>
-          </Flex.Row>
-          <Flex.Row>
-            <Flex.Item>근무지</Flex.Item>
-            <Flex.Item>
-              {jobDetail.place.type === '일반'
-                ? [
-                    ...jobDetail.place.address_arr,
-                    ...jobDetail.place.factory_arr.map(
-                      (factory) => factory.name,
-                    ),
-                  ]
-                : jobDetail.place.etc}
-            </Flex.Item>
-          </Flex.Row>
-        </>
+        isJobDetailResponse(data) ? (
+          <>
+            <JobSummary
+              imgSrc={
+                data.data.company.logo_url
+                  ? data.data.company.logo_url
+                  : '/no-photo.png'
+              }
+              companyName={data.data.company.name}
+              startTime={data.data.start_time}
+              endTime={data.data.end_time}
+              title={data.data.title}
+              bookmark={data.data.bookmark}
+              view={data.data.view}
+              buttonProp={{
+                children: '지원하기',
+                onClick: () => router.push(data.data.apply_url),
+              }}
+            />
+            <Flex.Row>
+              <Flex.Item>{data.data.task.main_task}</Flex.Item>
+              <Flex.Item>{data.data.task.sub_task_arr.join(', ')}</Flex.Item>
+            </Flex.Row>
+            <Flex.Row>
+              <Flex.Item>근무지</Flex.Item>
+              <Flex.Item>
+                {data.data.place.type === '일반'
+                  ? [
+                      ...data.data.place.address_arr,
+                      ...data.data.place.factory_arr.map(
+                        (factory) => factory.name,
+                      ),
+                    ]
+                  : data.data.place.etc}
+              </Flex.Item>
+            </Flex.Row>
+          </>
+        ) : (
+          <div>Something went wrong !</div>
+        )
       }
     />
   );
@@ -69,17 +73,17 @@ export const getStaticProps: GetStaticProps<
   { jdId: string }
 > = async ({ params }) => {
   const res = await getDetailJob(Number(params?.jdId));
-  const jobDetail = res.data.data;
+  const jobDetail = res;
 
   return {
-    props: { jobDetail: jobDetail },
+    props: { jobDetailResponse: jobDetail },
     revalidate: 1000 * 60 * 10,
   };
 };
 
 export const getStaticPaths = async () => {
   const res = await getJobList();
-  const jobList = res.data.data;
+  const jobList = res.data;
 
   return {
     paths: jobList.map((job) => ({ params: { jdId: job.id.toString() } })),

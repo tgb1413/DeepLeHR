@@ -1,9 +1,9 @@
-import axios from 'axios';
+import axios, { isAxiosError, AxiosError, Axios } from 'axios';
 import { JobsResponse, JobDetailResponse, JobListParams } from '../types';
 
 axios.defaults.baseURL = 'https://dev.user.gocho-back.com/v1';
 
-export const getJobList = (params?: JobListParams) => {
+export const getJobList = async (params?: JobListParams) => {
   const querySeperator = '?';
   const paramSeperator = '&';
   let query = querySeperator;
@@ -26,11 +26,37 @@ export const getJobList = (params?: JobListParams) => {
     query = '';
   }
 
-  return axios.get<JobsResponse>('/jds' + query);
+  try {
+    const res = await axios.get<JobsResponse>('/jds' + query);
+    return res.data;
+  } catch (e) {
+    if (isAxiosError(e)) {
+      throw e;
+    }
+
+    if (e instanceof Error) {
+      throw new AxiosError(e.message);
+    }
+
+    throw new AxiosError('Unknown Error');
+  }
 };
 
-export const getDetailJob = (jdId: number) =>
-  axios.get<JobDetailResponse>(`/jds/${jdId}`);
+export const getDetailJob = async (jdId: number) => {
+  try {
+    const res = await axios.get<JobDetailResponse>(`/jds/${jdId}`);
+    return res.data;
+  } catch (e) {
+    if (isAxiosError(e)) {
+      throw e;
+    }
 
+    if (e instanceof Error) {
+      throw new AxiosError(e.message);
+    }
+
+    throw new AxiosError('Unknown Error');
+  }
+};
 //https://dev.user.gocho-back.com/v1/jds
 //https://dev.user.gocho-back.com/v1/jds/{jdId}

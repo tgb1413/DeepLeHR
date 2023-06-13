@@ -15,8 +15,8 @@ const Home: NextPage = () => {
   });
 
   const { data, refetch } = useJobList(params);
-  const jobList = data?.data.data;
-  const pageResult = data?.data.page_result;
+  const jobList = data?.data;
+  const pageResult = data?.page_result;
 
   useEffect(() => {
     refetch();
